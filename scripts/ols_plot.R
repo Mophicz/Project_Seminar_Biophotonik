@@ -23,21 +23,21 @@ plot <- ggplot(df, aes(x = conc_jitter, y = signal_out, color = is_outlier)) +
   
   geom_point(alpha = 0.7) +
   
-  geom_line(data = regression_df, 
-            aes(x = x, y = y_predicted, 
-                color = "With Outliers"),
-            linetype = "solid", 
-            linewidth = 1,
-            inherit.aes = FALSE,
-            alpha = 0.7) +
+  #geom_line(data = regression_df, 
+  #          aes(x = x, y = y_predicted, 
+  #              color = "With Outliers"),
+  #          linetype = "solid", 
+  #          linewidth = 1,
+  #          inherit.aes = FALSE,
+  #          alpha = 0.7) +
   
-  geom_line(data = regression_df_no_outliers, 
-            aes(x = x, y = y_predicted, 
-                color = "Without Outliers"),
-            linetype = "solid", 
-            linewidth = 1,
-            inherit.aes = FALSE,
-            alpha = 0.7) +
+  # geom_line(data = regression_df_no_outliers, 
+  #           aes(x = x, y = y_predicted, 
+  #               color = "Without Outliers"),
+  #           linetype = "solid", 
+  #           linewidth = 1,
+  #           inherit.aes = FALSE,
+  #           alpha = 0.7) +
   
   scale_color_manual(
     name = "Outlier", 
