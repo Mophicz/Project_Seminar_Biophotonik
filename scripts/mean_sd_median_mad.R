@@ -26,10 +26,22 @@ sd <- sd(signal)
 
 
 plot(signal)
-abline(h=mean)
-abline(h=mean + sd, col="red")
+# abline(h=mean)
+# abline(h=mean + sd, col="red")
 
+# abline(h=median)
+# abline(h=median + mad, col="red")
 
-plot(signal)
-abline(h=median)
-abline(h=median + mad, col="red")
+# trimm data
+sorted_idx <- order(signal)
+n <- length(signal)
+n_trimm <- floor(n * 0.2)
+keeper_idx <- sorted_idx[(n_trimm + 1) : (n - n_trimm)]
+
+signal_trimmed <- signal[sort(keeper_idx)]
+
+mean_trimmed <- mean(signal_trimmed)
+sd_trimmed <- sd(signal_trimmed)
+
+abline(h=mean_trimmed)
+abline(h=mean_trimmed + sd_trimmed, col="red")
