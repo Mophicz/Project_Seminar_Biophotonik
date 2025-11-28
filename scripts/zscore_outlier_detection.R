@@ -39,8 +39,8 @@ for(i in seq_along(conc)) {
 }
 
 idx <- df$conc == conc[1]
-plot(z_score_robust[idx])
-abline(h=3)
+plot(rep(10, 20), z_score_robust[idx])
+abline(h=3, col="red")
 
 # determine outliers
 outlier_classic <- z_score_classic >= 3
@@ -67,4 +67,19 @@ conf_matrix <- confusionMatrix(predicted, actual)
 
 print(conf_matrix)
 
+# meeting 28.11
+library("pROC")
+roc_obj <- roc(
+  response = as.vector(df$is_outlier),
+  predictor = z_score_classic,
+  direction = ">",
+  levels = c(TRUE, FALSE)
+)
 
+plot(
+  1 - roc_obj$specificities,
+  roc_obj$sensitivities,
+  typ = "l"
+)
+
+roc_obj$auc
