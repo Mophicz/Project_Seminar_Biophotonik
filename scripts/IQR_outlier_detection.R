@@ -3,7 +3,7 @@ rm(list = ls())
 library(here)
 library(readr)
 
-source(here("scripts"))
+source(here("scripts", "ols.R"))
 
 # Define file paths
 data_path <- here("data", "df_sim_4.txt")
