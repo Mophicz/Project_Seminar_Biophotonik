@@ -2,22 +2,22 @@ rm(list = ls())
 
 library(here)
 library(readr)
-library(ggplot2)
-
-source(here("scripts", "ols.R"))
 
 # Define file paths
 data_path <- here("data", "df_sim_4.txt")
-save_path <- here("outputs", "signal_vs_concentration.png")
 
 # Load data
 df <- read_table(data_path)
-
 conc <- unique(df$conc)
+
+# robust
 median_all <- numeric(length(conc))
 mad_all <- numeric(length(conc))
+
+# classic
 mean_all <- numeric(length(conc))
 sd_all <- numeric(length(conc))
+
 
 for(i in seq_along(conc)) {
   idx <- df$conc == conc[i]
@@ -40,5 +40,5 @@ z_score2 <- (df$signal_out[df$conc == conc[1]] - median_all[1]) / mad_all[1]
 plot(rep(10, 20), z_score2)
 abline(h=3)
 
-length(which(z_score2 >= 3))
+z_score2 >= 3
 

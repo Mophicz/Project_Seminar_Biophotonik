@@ -113,23 +113,20 @@ roc_wins <- roc(
 )
 
 # plot
+par(mfrow = c(2, 3))
 
-plot(roc_mean, main = "ROC comparison", col = "black")
-plot(roc_median, add = TRUE, col = "blue")
-plot(roc_iqr, add = TRUE, col = "green")
-plot(roc_trim, add = TRUE, col = "red")
-plot(roc_wins, add = TRUE, col = "orange")
+plot(roc_mean, main = "Mean + SD", col = "black")
+legend("bottomright", legend = paste("AUC =", round(roc_mean$auc, 3)), bty = "n")
 
-legend("bottomright", 
-       legend = c("Mean + SD", "Median + MAD", "Median + IQR", "Trimmed", "Winsorized"), 
-       col = c("black", "blue", "green", "red", "orange"), 
-       lwd = 2)
+plot(roc_median, main = "Median + MAD", col = "blue")
+legend("bottomright", legend = paste("AUC =", round(roc_median$auc, 3)), bty = "n")
 
-# Area under the curve
+plot(roc_iqr, main = "Median + IQR", col = "green")
+legend("bottomright", legend = paste("AUC =", round(roc_iqr$auc, 3)), bty = "n")
 
-roc_mean$auc
-roc_median$auc
-roc_iqr$auc
-roc_trim$auc
-roc_wins$auc
+plot(roc_trim, main = "Trimmed", col = "red")
+legend("bottomright", legend = paste("AUC =", round(roc_trim$auc, 3)), bty = "n")
+
+plot(roc_wins, main = "Winsorized", col = "orange")
+legend("bottomright", legend = paste("AUC =", round(roc_wins$auc, 3)), bty = "n")
 
