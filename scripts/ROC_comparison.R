@@ -80,36 +80,36 @@ for(i in seq_along(conc)) {
 roc_mean <- roc(
   response = as.vector(df$is_outlier),
   predictor = z_score_mean,
-  direction = ">",
-  levels = c(TRUE, FALSE)
+  direction = "<",
+  levels = c(FALSE, TRUE)
 )
 
 roc_median <- roc(
   response = as.vector(df$is_outlier),
   predictor = z_score_median,
-  direction = ">",
-  levels = c(TRUE, FALSE)
+  direction = "<",
+  levels = c(FALSE, TRUE)
 )
 
 roc_iqr <- roc(
   response = as.vector(df$is_outlier),
   predictor = z_score_iqr,
-  direction = ">",
-  levels = c(TRUE, FALSE)
+  direction = "<",
+  levels = c(FALSE, TRUE)
 )
 
 roc_trim <- roc(
   response = as.vector(df$is_outlier),
   predictor = z_score_trim,
-  direction = ">",
-  levels = c(TRUE, FALSE)
+  direction = "<",
+  levels = c(FALSE, TRUE)
 )
 
 roc_wins <- roc(
   response = as.vector(df$is_outlier),
   predictor = z_score_wins,
-  direction = ">",
-  levels = c(TRUE, FALSE)
+  direction = "<",
+  levels = c(FALSE, TRUE)
 )
 
 # plot
@@ -130,3 +130,31 @@ legend("bottomright", legend = paste("AUC =", round(roc_trim$auc, 3)), bty = "n"
 plot(roc_wins, main = "Winsorized", col = "orange")
 legend("bottomright", legend = paste("AUC =", round(roc_wins$auc, 3)), bty = "n")
 
+#
+
+roc_list <- list(
+  "Mean_SD"      = roc_mean, 
+  "Median_MAD"   = roc_median, 
+  "Median_IQR"   = roc_iqr, 
+  "Trimmed"      = roc_trim, 
+  "Winsorized"   = roc_wins
+)
+
+
+sigma3_table <- do.call(rbind, lapply(names(roc_list), function(name) {
+  
+res <- coords(roc_list[[name]], x = 3, input = "threshold", 
+              ret = c("threshold", "specificity", "sensitivity", "accuracy"))
+  
+  
+data.frame(
+  Method = name,
+  Threshold = res$threshold,
+  Specificity = res$specificity,
+  Sensitivity = res$sensitivity,
+  Accuracy = res$accuracy
+  )
+}))
+
+# 3. Print the table
+print(sigma3_table)
