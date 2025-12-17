@@ -63,8 +63,13 @@ for (i in 1:max_iters) {
   
   # --- OUTLIER DETECTION ---
   
-  thresh_cooks <- 4/nobs(lin_reg)
-  is_calculated_outlier <- cooks.distance(lin_reg) > thresh_cooks
+  # # cook's distance
+  # thresh_cooks <- 4/nobs(lin_reg)
+  # is_calculated_outlier <- cooks.distance(lin_reg) > thresh_cooks
+  
+  # studentized residuals
+  thresh_stud <- 2
+  is_calculated_outlier <- rstudent(lin_reg) > thresh_stud
   
   # Convergence check
   if(sum(is_calculated_outlier) == 0) {
@@ -131,3 +136,6 @@ barplot(
   legend.text = c("True Outlier (Good)", "Valid Data (Bad)"),
   args.legend = list(x = "topright")
 )
+
+sum(metrics$removed_true_outliers)
+sum(metrics$removed_valid_data)
