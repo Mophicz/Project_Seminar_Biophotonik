@@ -4,8 +4,6 @@ library(here)
 library(readr)
 library(PRROC) # Switched from pROC to PRROC
 
-source(here("scripts", "ols.R"))
-
 # import data
 
 data_path <- here("data", "df_sim_4.txt")
