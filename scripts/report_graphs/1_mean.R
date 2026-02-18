@@ -2,6 +2,7 @@
 # Polished Signal Analysis Report: Statistical Comparison (Fixed Loop)
 # Description: Generates three plots (Mean, Median, Trimmed).
 #              Includes fixes for loop stability and PDF generation.
+#              UPDATED: Now colors points based on 'is_outlier' column.
 # ==============================================================================
 
 rm(list = ls())
@@ -28,19 +29,23 @@ df <- read_table(data_path)
 # Filter for the first concentration level
 conc_levels <- unique(df$conc)
 current_conc <- conc_levels[1]
-signal <- df %>% 
-  filter(conc == current_conc) %>% 
-  pull(signal_out)
+
+# Extract subset keeping signal AND outlier status
+df_subset <- df %>% 
+  filter(conc == current_conc)
 
 # Create plotting data frame
 plot_data <- data.frame(
-  Index = seq_along(signal),
-  Signal = signal
+  Index = seq_along(df_subset$signal_out),
+  Signal = df_subset$signal_out,
+  IsOutlier = factor(df_subset$is_outlier, levels = c(FALSE, TRUE)) # Ensure factors for coloring
 )
 
 # ==============================================================================
 # 2. Statistical Calculations
 # ==============================================================================
+
+signal <- plot_data$Signal
 
 # Ensure na.rm=TRUE to prevent calculation errors from stopping the script
 stat_mean <- list(
@@ -86,7 +91,7 @@ theme_report <- function() {
       axis.title = element_text(face = "bold", size = 12),
       panel.grid.minor = element_blank(),
       panel.grid.major.x = element_blank(),
-      legend.position = "none"
+      legend.position = "none" # Legend hidden as per original style
     )
 }
 
@@ -113,8 +118,8 @@ generate_plot <- function(data, stats_obj) {
     geom_hline(yintercept = center_val, 
                color = main_color, linewidth = 1) +
     
-    # Points
-    geom_point(color = "grey40", alpha = 0.5, size = 2) +
+    # Points - Colored by IsOutlier
+    geom_point(aes(color = IsOutlier), alpha = 0.5, size = 2) +
     
     # Text Labels (using coord_cartesian(clip="off") to handle edges)
     annotate("text", x = nrow(data) * 0.95, y = y_max, 
@@ -124,6 +129,9 @@ generate_plot <- function(data, stats_obj) {
     annotate("text", x = nrow(data) * 0.95, y = y_min, 
              label = lbl_lower, vjust = 1.6, 
              color = main_color, size = 3.5, fontface = "bold") +
+    
+    # Manual Color Scale (Matches the Z-score script)
+    scale_color_manual(values = c("FALSE" = "grey40", "TRUE" = "red")) +
     
     labs(x = "Measurement Index", y = "Signal Intensity") +
     

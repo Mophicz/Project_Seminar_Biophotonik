@@ -4,8 +4,6 @@ library(here)
 library(readr)
 library(pROC)
 
-source(here("scripts", "ols.R"))
-
 # import data
 
 data_path <- here("data", "df_sim_4.txt")
@@ -115,19 +113,19 @@ roc_wins <- roc(
 # plot
 par(mfrow = c(2, 3))
 
-plot(roc_mean, main = "Mean + SD", col = "black")
+plot(roc_mean, main = "Mean/SD", col = "black")
 legend("bottomright", legend = paste("AUC =", round(roc_mean$auc, 3)), bty = "n")
 
-plot(roc_median, main = "Median + MAD", col = "blue")
+plot(roc_median, main = "Median/MAD", col = "blue")
 legend("bottomright", legend = paste("AUC =", round(roc_median$auc, 3)), bty = "n")
 
-plot(roc_iqr, main = "Median + IQR", col = "green")
+plot(roc_iqr, main = "Median/IQR", col = "green")
 legend("bottomright", legend = paste("AUC =", round(roc_iqr$auc, 3)), bty = "n")
 
-plot(roc_trim, main = "Trimmed", col = "red")
+plot(roc_trim, main = "Trimmed mean/SD", col = "red")
 legend("bottomright", legend = paste("AUC =", round(roc_trim$auc, 3)), bty = "n")
 
-plot(roc_wins, main = "Winsorized", col = "orange")
+plot(roc_wins, main = "Winsorized mean/SD", col = "orange")
 legend("bottomright", legend = paste("AUC =", round(roc_wins$auc, 3)), bty = "n")
 
 #
