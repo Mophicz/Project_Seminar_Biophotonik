@@ -42,17 +42,16 @@ plot_data <- data.frame(
 )
 
 # ==============================================================================
-# 2. Statistical Calculations
+# 2. Statistical Calculations (UPDATED LABELS)
 # ==============================================================================
 
 signal <- plot_data$Signal
 
-# Ensure na.rm=TRUE to prevent calculation errors from stopping the script
 stat_mean <- list(
   center = mean(signal, na.rm = TRUE),
   spread = sd(signal, na.rm = TRUE),
   color  = "firebrick",
-  label_sym = "SD",
+  label_sym = "sigma",           # Changed from expression to string
   file   = "01_mean_sd.pdf"
 )
 
@@ -60,7 +59,7 @@ stat_median <- list(
   center = median(signal, na.rm = TRUE),
   spread = mad(signal, na.rm = TRUE),
   color  = "dodgerblue4",
-  label_sym = "MAD",
+  label_sym = "MAD",             # Plain text works fine in parse
   file   = "02_median_mad.pdf"
 )
 
@@ -74,15 +73,14 @@ stat_trimmed <- list(
   center = mean(keeper_values, na.rm = TRUE),
   spread = sd(keeper_values, na.rm = TRUE),
   color  = "#2ecc71",
-  label_sym = "SD (Trim)",
+  label_sym = "'SD (Trim)'",     # Use single quotes inside to keep text literal
   file   = "03_trimmed_mean.pdf"
 )
 
-# Store in a list
 all_stats <- list(stat_mean, stat_median, stat_trimmed)
 
 # ==============================================================================
-# 3. Visualization Function
+# 3. Visualization Function (UPDATED PARSING)
 # ==============================================================================
 
 theme_report <- function() {
@@ -91,51 +89,41 @@ theme_report <- function() {
       axis.title = element_text(face = "bold", size = 12),
       panel.grid.minor = element_blank(),
       panel.grid.major.x = element_blank(),
-      legend.position = "none" # Legend hidden as per original style
+      legend.position = "none"
     )
 }
 
 generate_plot <- function(data, stats_obj) {
   
-  # Extract values
   center_val <- stats_obj$center
   spread_val <- stats_obj$spread
   y_min <- center_val - spread_val
   y_max <- center_val + spread_val
   main_color <- stats_obj$color
   
-  lbl_upper <- paste("+1", stats_obj$label_sym)
-  lbl_lower <- paste("-1", stats_obj$label_sym)
+  # Use ~ to connect parts in an expression string
+  lbl_upper <- paste("'+1' ~", stats_obj$label_sym)
+  lbl_lower <- paste("'-1' ~", stats_obj$label_sym)
   
   p <- ggplot(data, aes(x = Index, y = Signal)) +
-    
-    # Shaded Region
     annotate("rect", xmin = -Inf, xmax = Inf, 
              ymin = y_min, ymax = y_max, 
              fill = main_color, alpha = 0.1) +
-    
-    # Center Line
     geom_hline(yintercept = center_val, 
                color = main_color, linewidth = 1) +
-    
-    # Points - Colored by IsOutlier
     geom_point(aes(color = IsOutlier), alpha = 0.5, size = 2) +
     
-    # Text Labels (using coord_cartesian(clip="off") to handle edges)
+    # ADDED: parse = TRUE to render symbols
     annotate("text", x = nrow(data) * 0.95, y = y_max, 
-             label = lbl_upper, vjust = -0.6, 
-             color = main_color, size = 3.5, fontface = "bold") +
+             label = lbl_upper, parse = TRUE,
+             vjust = -0.6, color = main_color, size = 3.5, fontface = "bold") +
     
     annotate("text", x = nrow(data) * 0.95, y = y_min, 
-             label = lbl_lower, vjust = 1.6, 
-             color = main_color, size = 3.5, fontface = "bold") +
+             label = lbl_lower, parse = TRUE,
+             vjust = 1.6, color = main_color, size = 3.5, fontface = "bold") +
     
-    # Manual Color Scale (Matches the Z-score script)
     scale_color_manual(values = c("FALSE" = "grey40", "TRUE" = "red")) +
-    
     labs(x = "Measurement Index", y = "Signal Intensity") +
-    
-    # Add padding and turn off clipping
     scale_y_continuous(expand = expansion(mult = 0.15)) +
     coord_cartesian(clip = "off") +
     theme_report()
