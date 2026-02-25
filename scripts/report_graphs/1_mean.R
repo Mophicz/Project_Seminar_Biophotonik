@@ -60,7 +60,7 @@ stat_median <- list(
   spread = mad(signal, na.rm = TRUE),
   color  = "dodgerblue4",
   label_sym = "MAD",             # Plain text works fine in parse
-  file   = "02_median_mad.pdf"
+  file   = "01_median_mad.pdf"
 )
 
 # Trimmed calculations
@@ -73,8 +73,8 @@ stat_trimmed <- list(
   center = mean(keeper_values, na.rm = TRUE),
   spread = sd(keeper_values, na.rm = TRUE),
   color  = "#2ecc71",
-  label_sym = "'SD (Trim)'",     # Use single quotes inside to keep text literal
-  file   = "03_trimmed_mean.pdf"
+  label_sym = "sigma",     # Use single quotes inside to keep text literal
+  file   = "01_trimmed_mean.pdf"
 )
 
 all_stats <- list(stat_mean, stat_median, stat_trimmed)

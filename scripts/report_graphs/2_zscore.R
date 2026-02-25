@@ -4,6 +4,7 @@
 #              - Matches logic from meeting_13-11.R (conc[1])
 #              - Colors (Red/Grey) are determined STRICTLY by the 'is_outlier'
 #                variable in the input dataframe, not the Z-score value.
+#              - Calculates Classic, Robust, and Trimmed Z-scores.
 # ==============================================================================
 
 rm(list = ls())
@@ -30,6 +31,31 @@ df <- read_table(data_path)
 # 2. Statistical Calculations & Filtering
 # ==============================================================================
 
+# Helper functions for Trimmed statistics (matching 1_mean.R logic)
+get_trimmed_mean <- function(x, trim_prop = 0.2) {
+  x <- x[!is.na(x)]
+  n <- length(x)
+  n_trimm <- floor(n * trim_prop)
+  if (n_trimm > 0) {
+    keeper_values <- sort(x)[(n_trimm + 1) : (n - n_trimm)]
+  } else {
+    keeper_values <- x
+  }
+  return(mean(keeper_values))
+}
+
+get_trimmed_sd <- function(x, trim_prop = 0.2) {
+  x <- x[!is.na(x)]
+  n <- length(x)
+  n_trimm <- floor(n * trim_prop)
+  if (n_trimm > 0) {
+    keeper_values <- sort(x)[(n_trimm + 1) : (n - n_trimm)]
+  } else {
+    keeper_values <- x
+  }
+  return(sd(keeper_values))
+}
+
 # Calculate stats grouped by concentration (preserves is_outlier column)
 df_calc <- df %>%
   group_by(conc) %>%
@@ -42,13 +68,19 @@ df_calc <- df %>%
     # Robust Z-Score
     median_val = median(signal_out, na.rm = TRUE),
     mad_val    = mad(signal_out, na.rm = TRUE),
-    z_robust   = (signal_out - median_val) / mad_val
+    z_robust   = (signal_out - median_val) / mad_val,
+    
+    # Trimmed Z-Score
+    trimmed_mean_val = get_trimmed_mean(signal_out, 0.2),
+    trimmed_sd_val   = get_trimmed_sd(signal_out, 0.2),
+    z_trimmed        = (signal_out - trimmed_mean_val) / trimmed_sd_val
   ) %>%
   ungroup()
 
 # FILTER: Keep only the first concentration group
 target_conc <- unique(df_calc$conc)[1]
-df_plot_data <- df_calc %>% filter(conc == target_conc)
+# df_plot_data <- df_calc %>% filter(conc == target_conc)
+df_plot_data <- df_calc
 
 message(paste("Filtered data to concentration group:", target_conc))
 
@@ -57,17 +89,24 @@ z_classic_config <- list(
   column    = "z_classic",
   color     = "firebrick",
   label_sym = "Limit",
-  file      = "04_zscore_classic.pdf"
+  file      = "02_zscore_classic.pdf"
 )
 
 z_robust_config <- list(
   column    = "z_robust",
   color     = "dodgerblue4", 
   label_sym = "Limit",
-  file      = "05_zscore_robust.pdf"
+  file      = "02_zscore_robust.pdf"
 )
 
-all_configs <- list(z_classic_config, z_robust_config)
+z_trimmed_config <- list(
+  column    = "z_trimmed",
+  color     = "#2ecc71", 
+  label_sym = "Limit",
+  file      = "02_zscore_trimmed.pdf"
+)
+
+all_configs <- list(z_classic_config, z_robust_config, z_trimmed_config)
 
 # ==============================================================================
 # 3. Visualization Function
@@ -116,7 +155,7 @@ generate_vertical_plot <- function(data, config) {
     
     # 3. Points (No Jitter)
     #    - position = "identity" ensures they are on a straight vertical line
-    geom_point(aes(color = IsOutlier), size = 2, alpha = 0.5, position = "identity") +
+    geom_point(aes(color = IsOutlier), size = 2, alpha = 0.5, position = position_jitter(width = 0.1, height = 0)) +
     
     # 4. Text Labels
     annotate("text", x = 0.35, y = upper_lim, 

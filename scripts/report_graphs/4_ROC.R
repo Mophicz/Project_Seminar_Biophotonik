@@ -68,11 +68,11 @@ df_calc <- df %>%
 # ==============================================================================
 
 plot_configs <- list(
-  list(col = "z_mean",   label = "Mean/SD",         color = "black",       file = "06_roc_01_mean_sd.pdf"),
-  list(col = "z_median", label = "Median/MAD",      color = "dodgerblue4", file = "06_roc_02_median_mad.pdf"),
-  list(col = "z_iqr",    label = "Median/IQR",      color = "#2ecc71",     file = "06_roc_03_median_iqr.pdf"),
-  list(col = "z_trim",   label = "Trimmed Mean",    color = "firebrick",   file = "06_roc_04_trimmed.pdf"),
-  list(col = "z_wins",   label = "Winsorized Mean", color = "orange",      file = "06_roc_05_winsorized.pdf")
+  list(col = "z_mean",   label = "Mean/SD",         color = "firebrick",       file = "03_roc_mean_sd.pdf"),
+  list(col = "z_median", label = "Median/MAD",      color = "dodgerblue4", file = "03_roc_median_mad.pdf"),
+  list(col = "z_iqr",    label = "Median/IQR",      color = "black",     file = "03_roc_median_iqr.pdf"),
+  list(col = "z_trim",   label = "Trimmed Mean",    color = "#2ecc71",   file = "03_roc_trimmed.pdf"),
+  list(col = "z_wins",   label = "Winsorized Mean", color = "orange",      file = "03_roc_winsorized.pdf")
 )
 
 theme_report <- function() {
