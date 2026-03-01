@@ -1,7 +1,9 @@
 # ==============================================================================
 # Polished Analysis: Plot 2.3 (Converted + Sorted Legend)
-# Description: Reproduces Plot 2.3 with specific color map and 
-#              custom sort order for the legend.
+# Description: Reproduces Plot 2.3 with specific color map, 
+#              custom sort order for the legend, and updated margins.
+#              UPDATED: Exact graph style coherence with 1_mean.R
+#              UPDATED: X-axis ticks mapped exactly to specific conc groups
 # ==============================================================================
 
 rm(list = ls())
@@ -34,14 +36,23 @@ df$type <- factor(df$type, levels = c("normal", "3xSD", "10xSD", "random"))
 # ==============================================================================
 
 theme_report <- function() {
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_family = "Arial", base_size = 16) +
     theme(
-      axis.title = element_text(face = "bold", size = 12),
+      axis.title = element_text(size = 24),
+      axis.text = element_text(size = 14), 
+      
+      axis.ticks = element_line(color = "black", linewidth = 0.5),
+      axis.ticks.length = unit(0.15, "cm"),
+      
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
+      
+      panel.grid.major.y = element_line(color = "grey85", linewidth = 0.5),
+      panel.grid.major.x = element_line(color = "grey85", linewidth = 0.5), 
       panel.grid.minor = element_blank(),
-      panel.grid.major.x = element_blank(),
+      
       legend.position = "right", 
-      legend.title = element_text(face = "bold", size = 10),
-      legend.text = element_text(size = 10)
+      legend.title = element_text(size = 16),
+      legend.text = element_text(size = 14)
     )
 }
 
@@ -62,18 +73,25 @@ cols_map <- c(
 p <- ggplot(df, aes(x = conc_jitter, y = signal_out, color = type)) +
   geom_point(size = 2, alpha = 0.5) +
   scale_color_manual(values = cols_map) +
+  
+  # CHANGED: Explicitly set the x-axis breaks to the requested groups
+  scale_x_continuous(breaks = c(10, 250, 500, 750, 1000)) + 
+  scale_y_continuous(expand = expansion(mult = 0.15)) +
+  
   labs(
-    x = "Jittered Concentration", 
+    x = "Concentration", 
     y = "Signal Intensity",
     color = "Data Type"
   ) +
+  coord_cartesian(clip = "off") +
   theme_report()
 
 # ==============================================================================
 # 4. Export
 # ==============================================================================
 
-save_path <- file.path(output_dir, "plot_2_3_sorted_legend.pdf")
-ggsave(save_path, plot = p, device = "pdf", width = 7, height = 4)
+save_path <- file.path(output_dir, "00_dataset.pdf")
+
+ggsave(save_path, plot = p, device = cairo_pdf, width = 7, height = 4)
 
 message(paste("Saved plot to:", save_path))

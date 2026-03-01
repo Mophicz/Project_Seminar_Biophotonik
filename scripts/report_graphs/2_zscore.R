@@ -5,6 +5,8 @@
 #              - Colors (Red/Grey) are determined STRICTLY by the 'is_outlier'
 #                variable in the input dataframe, not the Z-score value.
 #              - Calculates Classic, Robust, and Trimmed Z-scores.
+#              UPDATED: Applied exact 1_mean.R styling.
+#              UPDATED: Changed green color to colorblind-safe purple.
 # ==============================================================================
 
 rm(list = ls())
@@ -99,9 +101,10 @@ z_robust_config <- list(
   file      = "02_zscore_robust.pdf"
 )
 
+# CHANGED: Green color swapped to purple for colorblind safety
 z_trimmed_config <- list(
   column    = "z_trimmed",
-  color     = "#2ecc71", 
+  color     = "darkorchid4", 
   label_sym = "Limit",
   file      = "02_zscore_trimmed.pdf"
 )
@@ -112,14 +115,24 @@ all_configs <- list(z_classic_config, z_robust_config, z_trimmed_config)
 # 3. Visualization Function
 # ==============================================================================
 
+# CHANGED: Exact style coherence with 1_mean.R (1D plot logic)
 theme_strip <- function() {
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_family = "Arial", base_size = 16) +
     theme(
-      axis.title = element_text(face = "bold", size = 12),
-      panel.grid.minor = element_blank(),
+      axis.title.y = element_text(size = 24),
+      axis.text.y = element_text(size = 14), 
+      axis.ticks.y = element_line(color = "black", linewidth = 0.5),
+      axis.ticks.length.y = unit(0.15, "cm"),
+      
+      axis.title.x = element_blank(),
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
+      panel.grid.major.y = element_line(color = "grey85", linewidth = 0.5),
       panel.grid.major.x = element_blank(), 
-      axis.text.x = element_blank(),       
-      axis.title.x = element_blank(),      
+      panel.grid.minor = element_blank(),
+      
       legend.position = "none"
     )
 }
@@ -157,14 +170,14 @@ generate_vertical_plot <- function(data, config) {
     #    - position = "identity" ensures they are on a straight vertical line
     geom_point(aes(color = IsOutlier), size = 2, alpha = 0.5, position = position_jitter(width = 0.1, height = 0)) +
     
-    # 4. Text Labels
+    # 4. Text Labels (CHANGED: Set to Arial, size 5, bold)
     annotate("text", x = 0.35, y = upper_lim, 
              label = lbl_upper, vjust = -0.5, 
-             color = main_color, size = 3.5, fontface = "bold") +
+             color = main_color, family = "Arial", size = 5, fontface = "bold") +
     
     annotate("text", x = 0.35, y = lower_lim, 
              label = lbl_lower, vjust = 1.5, 
-             color = main_color, size = 3.5, fontface = "bold") +
+             color = main_color, family = "Arial", size = 5, fontface = "bold") +
     
     # 5. Coloring based on IsOutlier factor
     scale_color_manual(values = c("FALSE" = "grey40", "TRUE" = "red")) +
@@ -173,6 +186,8 @@ generate_vertical_plot <- function(data, config) {
     scale_x_continuous(limits = c(-0.5, 0.5)) +
     
     labs(y = "Z-Score") +
+    # CHANGED: Added clip = "off" to prevent annotation cutoffs
+    coord_cartesian(clip = "off") +
     theme_strip()
   
   return(p)
@@ -194,7 +209,8 @@ for (i in 1:length(all_configs)) {
   p <- generate_vertical_plot(df_plot_data, curr_config)
   
   save_path <- file.path(output_dir, curr_config$file)
-  ggsave(save_path, plot = p, device = "pdf", width = 4, height = 6)
+  # CHANGED: Updated device to cairo_pdf for proper Arial rendering
+  ggsave(save_path, plot = p, device = cairo_pdf, width = 4, height = 6)
   
   message(paste("   -> Saved to:", save_path))
 }
