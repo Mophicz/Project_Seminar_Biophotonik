@@ -5,8 +5,8 @@ rm(list = ls())
 #dev.off()
 
 # Define file paths
-#data_path <- here("data", "df_sim_4.txt")
-data_path <- here("data", "df_sim_4_iter_3.txt")
+data_path <- here("data", "df_sim_4.txt")
+#data_path <- here("data", "df_sim_4_iter_3.txt")
 #data_path <- here("data", "df_sim_clean_4.txt")
 
 # Load data
