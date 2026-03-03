@@ -1,8 +1,8 @@
 # ==============================================================================
 # Polished Signal Analysis Report: Statistical Comparison (Vertical Strip Plot)
 # Description: Generates three plots (Mean, Median, Trimmed).
-#              UPDATED: Font changed to Arial, axis titles enlarged & unbolded.
-#              UPDATED: Converted to a 1D vertical strip plot with jitter.
+#              UPDATED: Font changed to Arial, axis titles scaled for paper.
+#              UPDATED: Scaled for composite assembly (width = 1.8, height = 2).
 #              UPDATED: Y-axis limits are now strictly consistent across plots.
 # ==============================================================================
 
@@ -93,11 +93,11 @@ global_y_limits <- c(global_y_min, global_y_max)
 # ==============================================================================
 
 theme_report <- function() {
-  theme_minimal(base_family = "Arial", base_size = 16) +
+  # CHANGED: Adjusted base_size, axis.title, and axis.text for paper scaling
+  theme_minimal(base_family = "Arial", base_size = 10) +
     theme(
-      # CHANGED: Removed bold formatting and bumped size up to 24
-      axis.title.y = element_text(size = 24),
-      axis.text.y = element_text(size = 14), 
+      axis.title.y = element_text(size = 10),
+      axis.text.y = element_text(size = 8), 
       axis.ticks.y = element_line(color = "black", linewidth = 0.5),
       axis.ticks.length.y = unit(0.15, "cm"),
       
@@ -132,16 +132,18 @@ generate_plot <- function(data, stats_obj, y_limits) {
     
     geom_hline(yintercept = center_val, color = main_color, linewidth = 1) +
     
-    geom_point(aes(color = IsOutlier), alpha = 0.5, size = 2, 
+    # CHANGED: Adjusted point size to 1 to match z-score plots
+    geom_point(aes(color = IsOutlier), alpha = 0.5, size = 1, 
                position = position_jitter(width = 0.1, height = 0, seed = 42)) +
     
+    # CHANGED: Adjusted annotate text size to 2.8
     annotate("text", x = 0.35, y = y_max, 
              label = lbl_upper, parse = TRUE, family = "Arial",
-             vjust = -0.6, color = main_color, size = 5, fontface = "bold") +
+             vjust = -0.6, color = main_color, size = 2.8, fontface = "bold") +
     
     annotate("text", x = 0.35, y = y_min, 
              label = lbl_lower, parse = TRUE, family = "Arial",
-             vjust = 1.6, color = main_color, size = 5, fontface = "bold") +
+             vjust = 1.6, color = main_color, size = 2.8, fontface = "bold") +
     
     scale_color_manual(values = c("FALSE" = "grey40", "TRUE" = "red")) +
     
@@ -170,7 +172,8 @@ for (i in 1:length(all_stats)) {
   
   save_path <- file.path(output_dir, curr_metric$file)
   
-  ggsave(save_path, plot = p, device = cairo_pdf, width = 4, height = 6)
+  # CHANGED: Adjusted ggsave width and height to 1.8 and 2 respectively
+  ggsave(save_path, plot = p, device = cairo_pdf, width = 1.8, height = 2)
   
   message(paste("   -> Saved to:", save_path))
 }

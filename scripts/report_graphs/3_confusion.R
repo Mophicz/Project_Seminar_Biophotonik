@@ -2,6 +2,8 @@
 # Polished Confusion Matrix Analysis: Z-Score Threshold Evaluation
 # Description: Evaluates classification performance (Threshold = +/- 3) 
 #              by plotting confusion matrices for Classic and Robust Z-Scores.
+#              UPDATED: Scaled for composite assembly (width = 2, height = 3)
+#              UPDATED: Removed the outer black frame for cleaner tile display.
 # ==============================================================================
 
 rm(list = ls())
@@ -51,15 +53,23 @@ df_calc <- df %>%
 # ==============================================================================
 
 plot_configs <- list(
-  list(col = "pred_classic", label = "Classic Z-Score", color = "firebrick",   file = "04_conf_classic.pdf"),
-  list(col = "pred_robust",  label = "Robust Z-Score",  color = "dodgerblue4", file = "04_conf_robust.pdf")
+  list(col = "pred_classic", label = "Classic Z-Score", color = "firebrick",   file = "03_conf_classic.pdf"),
+  list(col = "pred_robust",  label = "Robust Z-Score",  color = "dodgerblue4", file = "03_conf_robust.pdf")
 )
 
 theme_report <- function() {
-  theme_minimal(base_size = 14) +
+  # CHANGED: Adjusted base_size, axis.title, and axis.text to match 2_zscore.R sizing
+  theme_minimal(base_family = "Arial", base_size = 10) +
     theme(
-      axis.title = element_text(face = "bold", size = 12),
-      panel.grid = element_blank(), # Remove grid for clean matrix tiles
+      axis.title = element_text(size = 10),
+      axis.text = element_text(size = 8), 
+      
+      axis.ticks = element_line(color = "black", linewidth = 0.5),
+      axis.ticks.length = unit(0.15, "cm"),
+      
+      panel.border = element_blank(),
+      
+      panel.grid = element_blank(), # Removed grid for clean matrix tiles
       legend.position = "none"
     )
 }
@@ -104,7 +114,8 @@ generate_conf_matrix <- function(data, truth_col, pred_col, config) {
   # Generate Tile Plot
   p <- ggplot(cm_data, aes(x = Truth, y = Prediction, fill = Count)) +
     geom_tile(color = "white", linewidth = 1) +
-    geom_text(aes(label = DispText, color = TextCol), size = 6, fontface = "bold") +
+    # CHANGED: Adjusted geom_text size to 2.8 to match 2_zscore.R annotations
+    geom_text(aes(label = DispText, color = TextCol), size = 2.8, fontface = "bold", family = "Arial") +
     scale_fill_gradient(low = "grey95", high = config$color) +
     scale_color_identity() + # Use literal color values defined in TextCol
     labs(
@@ -113,7 +124,7 @@ generate_conf_matrix <- function(data, truth_col, pred_col, config) {
     ) +
     scale_x_discrete(expand = c(0, 0)) +
     scale_y_discrete(expand = c(0, 0)) +
-    coord_fixed(ratio = 1) + # Ensure perfectly square matrix tiles
+    coord_fixed(ratio = 1, clip = "off") + 
     theme_report()
   
   return(p)
@@ -137,7 +148,8 @@ for (cfg in plot_configs) {
   )
   
   save_path <- file.path(output_dir, cfg$file)
-  ggsave(save_path, plot = p, device = "pdf", width = 5, height = 5)
+  # CHANGED: Adjusted ggsave width and height to 2 and 3 respectively
+  ggsave(save_path, plot = p, device = cairo_pdf, width = 2, height = 2)
   
   message(paste("   -> Saved to:", save_path))
 }

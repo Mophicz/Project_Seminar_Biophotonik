@@ -1,11 +1,10 @@
 # ==============================================================================
-# Polished ROC Analysis: Method Comparison (Individual Plots)
-# Description: Calculates Z-scores and generates individual ROC plots.
-#              FIX: Removed plot titles (redundant with LaTeX subcaptions).
-#              UPDATED: Scaled for composite assembly (width = 2, height = 2.1).
-#              UPDATED: Changed trimmed color to darkorchid4.
-#              UPDATED: Increased axis expansion to prevent frame overlap.
-#              UPDATED: Increased right/top plot margins to prevent label cutoff.
+# Polished MCC Analysis: Method Comparison (Individual Plots)
+# Description: Calculates Z-scores and generates individual MCC curves.
+#              UPDATED: Ported from base R to ggplot2 for style consistency.
+#              UPDATED: Evaluates absolute Z-scores (|Z|) across thresholds.
+#              UPDATED: Identifies and plots the optimal threshold line.
+#              UPDATED: Exact aesthetic match to 04_ROC.R and 05_PR.R.
 # ==============================================================================
 
 rm(list = ls())
@@ -14,7 +13,6 @@ library(ggplot2)
 library(dplyr)
 library(here)
 library(readr)
-library(pROC)
 library(tidyr)
 
 # ==============================================================================
@@ -68,19 +66,18 @@ df_calc <- df %>%
   ungroup()
 
 # ==============================================================================
-# 3. Visualization Setup
+# 3. Visualization Setup & MCC Logic
 # ==============================================================================
 
 plot_configs <- list(
-  list(col = "z_mean",   label = "Mean/SD",         color = "firebrick",       file = "04_roc_mean_sd.pdf"),
-  list(col = "z_median", label = "Median/MAD",      color = "dodgerblue4",     file = "04_roc_median_mad.pdf"),
-  list(col = "z_iqr",    label = "Median/IQR",      color = "black",           file = "04_roc_median_iqr.pdf"),
-  list(col = "z_trim",   label = "Trimmed Mean",    color = "darkorchid4",     file = "04_roc_trimmed.pdf"),
-  list(col = "z_wins",   label = "Winsorized Mean", color = "orange",          file = "04_roc_winsorized.pdf")
+  list(col = "z_mean",   label = "Mean/SD",         color = "firebrick",       file = "06_mcc_mean_sd.pdf"),
+  list(col = "z_median", label = "Median/MAD",      color = "dodgerblue4",     file = "06_mcc_median_mad.pdf"),
+  list(col = "z_iqr",    label = "Median/IQR",      color = "black",           file = "06_mcc_median_iqr.pdf"),
+  list(col = "z_trim",   label = "Trimmed Mean",    color = "darkorchid4",     file = "06_mcc_trimmed.pdf"),
+  list(col = "z_wins",   label = "Winsorized Mean", color = "orange",          file = "06_mcc_winsorized.pdf")
 )
 
 theme_report <- function() {
-  # CHANGED: Adjusted base_size, axis.title, and axis.text to match sizing standard
   theme_minimal(base_family = "Arial", base_size = 10) +
     theme(
       axis.title = element_text(size = 10),
@@ -99,40 +96,58 @@ theme_report <- function() {
     )
 }
 
-generate_single_roc <- function(response, predictor, config) {
+generate_single_mcc <- function(truth, score_raw, config) {
   
-  # Calculate ROC
-  r <- roc(response, predictor, direction = "<", quiet = TRUE)
-  auc_val <- round(auc(r), 3)
+  # MCC requires absolute scores to test two-tailed thresholds
+  score <- abs(score_raw)
+  thresholds <- sort(unique(score))
   
-  # Extract Data
+  # Pre-allocate MCC vector
+  mcc_vals <- numeric(length(thresholds))
+  
+  # Calculate MCC for every threshold
+  for (i in seq_along(thresholds)) {
+    pred <- score >= thresholds[i]
+    
+    TP <- sum(pred & truth)
+    FP <- sum(pred & !truth)
+    FN <- sum(!pred & truth)
+    TN <- sum(!pred & !truth)
+    
+    # Cast to numeric to prevent integer overflow in large datasets
+    denom <- as.numeric(TP + FP) * as.numeric(TP + FN) * as.numeric(TN + FP) * as.numeric(TN + FN)
+    
+    if (denom > 0) {
+      mcc_vals[i] <- (TP * TN - FP * FN) / sqrt(denom)
+    } else {
+      mcc_vals[i] <- NA # Set to NA if undefined, matching standard behavior
+    }
+  }
+  
   plot_data <- data.frame(
-    spec = r$specificities,
-    sens = r$sensitivities
-  )
+    threshold = thresholds,
+    mcc = mcc_vals
+  ) %>% drop_na()
   
-  label_text <- paste0("AUC = ", auc_val)
+  # Identify optimal threshold
+  idx_opt_mcc <- which.max(plot_data$mcc)
+  thresh_opt_mcc <- plot_data$threshold[idx_opt_mcc]
+  max_mcc_val <- plot_data$mcc[idx_opt_mcc]
   
-  p <- ggplot(plot_data, aes(x = spec, y = sens)) +
+  p <- ggplot(plot_data, aes(x = threshold, y = mcc)) +
     
-    # 1. Diagonal (Chance) Line
-    geom_segment(aes(x = 1, y = 0, xend = 0, yend = 1), 
-                 linetype = "dashed", color = "grey60") +
+    # 1. Optimal Threshold Line
+    geom_vline(xintercept = thresh_opt_mcc, linetype = "dashed", color = "grey60") +
     
-    # 2. ROC Curve Line (No shading)
+    # 2. MCC Curve
     geom_path(color = config$color, linewidth = 1.2) +
     
-    # 3. AUC Label
-    # CHANGED: Adjusted geom_text size to 2.8 to match annotations
-    annotate("text", x = 0.3, y = 0.15, label = label_text, 
-             size = 2.5, color = config$color, family = "Arial") +
-    
     # 4. Axes & Limits
-    scale_x_reverse(limits = c(1, 0), expand = expansion(mult = 0.03), name = "Specificity") +
-    scale_y_continuous(limits = c(0, 1), expand = expansion(mult = 0.03), name = "Sensitivity") +
+    scale_x_continuous(limits = c(0, 5), expand = expansion(mult = 0.03), name = "Threshold") +
+    scale_y_continuous(limits = c(-1, 1), expand = expansion(mult = 0.03), name = "MCC") +
     
-    # 5. Aspect Ratio & Clipping
-    coord_fixed(ratio = 1, clip = "off") +
+    # Note: coord_fixed is removed here because X and Y scales are drastically different
+    coord_cartesian(clip = "off") +
     
     theme_report()
   
@@ -143,45 +158,20 @@ generate_single_roc <- function(response, predictor, config) {
 # 4. Loop & Export
 # ==============================================================================
 
-message("Generating individual ROC plots...")
+message("Generating individual MCC plots...")
 
 for (cfg in plot_configs) {
   
   message(paste("Processing:", cfg$label))
   
-  p <- generate_single_roc(
-    response = df_calc$is_outlier,
-    predictor = df_calc[[cfg$col]],
+  p <- generate_single_mcc(
+    truth = df_calc$is_outlier,
+    score_raw = df_calc[[cfg$col]],
     config = cfg
   )
   
   save_path <- file.path(output_dir, cfg$file)
-  # CHANGED: Adjusted ggsave width to 2 and height to 2.1 to properly frame the square plot
   ggsave(save_path, plot = p, device = cairo_pdf, width = 2.1, height = 2.1)
 }
 
-# ==============================================================================
-# 5. Sigma 3 Statistics Table
-# ==============================================================================
-
-message("\n--- Performance at Threshold = 3 ---")
-
-stats_table <- do.call(rbind, lapply(plot_configs, function(cfg) {
-  
-  r <- roc(df_calc$is_outlier, df_calc[[cfg$col]], direction = "<", quiet = TRUE)
-  
-  res <- coords(r, x = 3, input = "threshold", 
-                ret = c("specificity", "sensitivity", "accuracy"),
-                transpose = FALSE)
-  
-  if(nrow(res) > 1) res <- res[1, ]
-  
-  data.frame(
-    Method = cfg$label,
-    Specificity = round(res$specificity, 4),
-    Sensitivity = round(res$sensitivity, 4),
-    Accuracy = round(res$accuracy, 4)
-  )
-}))
-
-print(stats_table)
+message("All MCC curves exported successfully.")

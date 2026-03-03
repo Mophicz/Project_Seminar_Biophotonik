@@ -4,6 +4,7 @@
 #              custom sort order for the legend, and updated margins.
 #              UPDATED: Exact graph style coherence with 1_mean.R
 #              UPDATED: X-axis ticks mapped exactly to specific conc groups
+#              UPDATED: Scaled to IEEE format requirements (fonts: 8-10pt, width: 7.16in)
 # ==============================================================================
 
 rm(list = ls())
@@ -36,11 +37,13 @@ df$type <- factor(df$type, levels = c("normal", "3xSD", "10xSD", "random"))
 # ==============================================================================
 
 theme_report <- function() {
-  theme_minimal(base_family = "Arial", base_size = 16) +
+  theme_minimal(base_family = "Arial", base_size = 10) +
     theme(
-      axis.title = element_text(size = 24),
-      axis.text = element_text(size = 14), 
+      # CHANGED: IEEE standard font sizes (10 pt for titles, 8 pt for text)
+      axis.title = element_text(size = 10),
+      axis.text = element_text(size = 8), 
       
+      # IEEE requires lines to be >= 0.5 pt
       axis.ticks = element_line(color = "black", linewidth = 0.5),
       axis.ticks.length = unit(0.15, "cm"),
       
@@ -51,8 +54,8 @@ theme_report <- function() {
       panel.grid.minor = element_blank(),
       
       legend.position = "right", 
-      legend.title = element_text(size = 16),
-      legend.text = element_text(size = 14)
+      legend.title = element_text(size = 10),
+      legend.text = element_text(size = 8)
     )
 }
 
@@ -71,10 +74,10 @@ cols_map <- c(
 )
 
 p <- ggplot(df, aes(x = conc_jitter, y = signal_out, color = type)) +
+  # Note: You may want to drop size = 2 to size = 1 if the points feel too thick for print
   geom_point(size = 2, alpha = 0.5) +
   scale_color_manual(values = cols_map) +
   
-  # CHANGED: Explicitly set the x-axis breaks to the requested groups
   scale_x_continuous(breaks = c(10, 250, 500, 750, 1000)) + 
   scale_y_continuous(expand = expansion(mult = 0.15)) +
   
@@ -92,6 +95,6 @@ p <- ggplot(df, aes(x = conc_jitter, y = signal_out, color = type)) +
 
 save_path <- file.path(output_dir, "00_dataset.pdf")
 
-ggsave(save_path, plot = p, device = cairo_pdf, width = 7, height = 4)
+ggsave(save_path, plot = p, device = cairo_pdf, width = 3.4, height = 2.5)
 
 message(paste("Saved plot to:", save_path))
