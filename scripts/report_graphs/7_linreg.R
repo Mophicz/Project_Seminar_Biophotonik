@@ -42,7 +42,6 @@ p_vars <- length(coefficients(lin_reg))
 mean_lev      <- p_vars / n_obs
 thresh_lev    <- 2 * mean_lev
 thresh_cooks  <- 4 / n_obs
-thresh_will_x <- 3 * mean_lev
 
 # Augment dataframe with all necessary diagnostic statistics
 df_plot <- df %>%
@@ -84,8 +83,9 @@ line_width <- 1
 
 # Dimensions
 full_width <- 3.4
-half_width <- 2.0
+half_width <- 2.3
 plot_height <- 2.8
+half_height <- 1.9
 
 # ==============================================================================
 # 4. Generate Plots
@@ -101,6 +101,7 @@ p_reg <- ggplot(df_plot, aes(x = conc, y = signal_out)) +
               color = "black", 
               linewidth = 0.5) +
   labs(x = "Concentration", y = "Signal Intensity") +
+  coord_cartesian(clip = "off") +
   theme_report()
 
 ggsave(file.path(output_dir, "07_linreg_fit.pdf"), plot = p_reg, 
@@ -111,10 +112,11 @@ p_resid <- ggplot(df_plot, aes(x = conc, y = resids)) +
   geom_hline(yintercept = 0, color = "black", linewidth = 0.5) +
   geom_point(color = pt_color, size = pt_size, alpha = pt_alpha) +
   labs(x = "Concentration", y = "Residuals") +
+  coord_cartesian(clip = "off") +
   theme_report()
 
 ggsave(file.path(output_dir, "07_linreg_residuals.pdf"), plot = p_resid, 
-       device = cairo_pdf, width = full_width, height = plot_height)
+       device = cairo_pdf, width = half_width, height = half_height)
 
 # --- 3. Standardized Residuals (Half Width) ---
 p_std <- ggplot(df_plot, aes(x = conc, y = std_resids)) +
@@ -127,12 +129,13 @@ p_std <- ggplot(df_plot, aes(x = conc, y = std_resids)) +
            color = line_color, family = "Arial", size = 3, fontface = "bold") +
   annotate("text", x = Inf, y = -3, label = "-3", hjust = 1.2, vjust = 1.5, 
            color = line_color, family = "Arial", size = 3, fontface = "bold") +
-  expand_limits(y = c(-4, 4)) +
+  expand_limits(y = c(-4.5, 4)) +
   labs(x = "Concentration", y = "Standardized Res.") +
+  coord_cartesian(clip = "off") +
   theme_report()
 
 ggsave(file.path(output_dir, "07_linreg_std_resids.pdf"), plot = p_std, 
-       device = cairo_pdf, width = full_width, height = plot_height)
+       device = cairo_pdf, width = half_width, height = half_height)
 
 # --- 4. Studentized Residuals (Half Width) ---
 p_stu <- ggplot(df_plot, aes(x = conc, y = stu_resids)) +
@@ -145,12 +148,13 @@ p_stu <- ggplot(df_plot, aes(x = conc, y = stu_resids)) +
            color = line_color, family = "Arial", size = 3, fontface = "bold") +
   annotate("text", x = Inf, y = -3, label = "-3", hjust = 1.2, vjust = 1.5, 
            color = line_color, family = "Arial", size = 3, fontface = "bold") +
-  expand_limits(y = c(-4, 4)) +
+  expand_limits(y = c(-4.5, 4)) +
   labs(x = "Concentration", y = "Studentized Res.") +
+  coord_cartesian(clip = "off") +
   theme_report()
 
 ggsave(file.path(output_dir, "07_linreg_stu_resids.pdf"), plot = p_stu, 
-       device = cairo_pdf, width = full_width, height = plot_height)
+       device = cairo_pdf, width = half_width, height = half_height)
 
 # --- 5. Leverage ---
 p_lev <- ggplot(df_plot, aes(x = conc, y = leverage)) +
@@ -166,6 +170,7 @@ p_lev <- ggplot(df_plot, aes(x = conc, y = leverage)) +
   expand_limits(y = c(0, 0.1), x = c(0, 1050)) +
   geom_point(color = pt_color, size = pt_size, alpha = pt_alpha) +
   labs(x = "Concentration", y = "Leverage") +
+  coord_cartesian(clip = "off") +
   theme_report()
 
 ggsave(file.path(output_dir, "07_linreg_leverage.pdf"), plot = p_lev, 
@@ -182,6 +187,7 @@ p_cooks <- ggplot(df_plot, aes(x = seq_along(cooksd), y = cooksd)) +
   annotate("text", x = Inf, y = thresh_cooks, label = "4/n", parse = TRUE, 
            hjust = 1.2, vjust = -0.5, color = line_color, family = "Arial", size = 3) +
   labs(x = "Observation Index", y = "Cook's Distance") +
+  coord_cartesian(clip = "off") +
   theme_report()
 
 ggsave(file.path(output_dir, "07_linreg_cooks.pdf"), plot = p_cooks, 
@@ -189,10 +195,10 @@ ggsave(file.path(output_dir, "07_linreg_cooks.pdf"), plot = p_cooks,
 
 # --- 7. Williams Plot ---
 p_will <- ggplot(df_plot, aes(x = leverage, y = stu_resids)) +
-  annotate("rect", xmin = -Inf, xmax = thresh_will_x, ymin = -3, ymax = 3, fill = line_color, alpha = 0.1) +
+  annotate("rect", xmin = -Inf, xmax = thresh_cooks, ymin = -3, ymax = 3, fill = line_color, alpha = 0.1) +
   geom_hline(yintercept = c(-3, 3), color = line_color, 
              linetype = "solid", linewidth = 0.5) +
-  geom_vline(xintercept = thresh_will_x, color = line_color, 
+  geom_vline(xintercept = thresh_cooks, color = line_color, 
              linetype = "solid", linewidth = 0.5) +
   geom_hline(yintercept = 0, color = "black", linewidth = 0.5) +
   geom_point(color = pt_color, size = pt_size, alpha = pt_alpha) +
@@ -200,10 +206,11 @@ p_will <- ggplot(df_plot, aes(x = leverage, y = stu_resids)) +
            color = line_color, family = "Arial", size = 3, fontface = "bold") +
   annotate("text", x = Inf, y = -3, label = "-3", hjust = 5, vjust = 1.5, 
            color = line_color, family = "Arial", size = 3, fontface = "bold") +
-  annotate("text", x = thresh_will_x, y = Inf, label = "3*bar(h)", parse = TRUE, 
+  annotate("text", x = thresh_cooks, y = Inf, label = "2*bar(h)", parse = TRUE, 
            hjust = 1.5, vjust = 1.5, color = line_color, family = "Arial", size = 3) +
   expand_limits(y = c(-4, 4)) +
   labs(x = "Leverage", y = "Studentized Residuals") +
+  coord_cartesian(clip = "off") +
   theme_report()
 
 ggsave(file.path(output_dir, "07_linreg_williams.pdf"), plot = p_will, 
