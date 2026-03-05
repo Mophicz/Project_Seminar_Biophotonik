@@ -153,6 +153,6 @@ p <- ggplot(all_mcc_data, aes(x = threshold, y = mcc, color = Method)) +
 
 # Export fitting a 3.4 inch column. Height is set to 3.2 to accommodate the bottom legend.
 save_path <- file.path(output_dir, "06_mcc_mean_median.pdf")
-ggsave(save_path, plot = p, device = cairo_pdf, width = 3.4, height = 3.2)
+ggsave(save_path, plot = p, device = cairo_pdf, width = 3.4, height = 2.8)
 
 message(paste("MCC curve exported successfully to:", save_path))
