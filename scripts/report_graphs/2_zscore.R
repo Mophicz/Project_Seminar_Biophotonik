@@ -1,8 +1,8 @@
 # ==============================================================================
 # Polished Z-Score Report: Vertical Strip Plot (Single Group)
 # Description: Plots Z-scores for the first concentration group only.
-#              UPDATED: Scaled for composite assembly (1.75 x 4.0 inches)
-#              UPDATED: Restored default margins for Inkscape editing
+#              UPDATED: Includes all 5 methods with 10% trim/winsorize.
+#              UPDATED: Scaled for composite assembly (1.8 x 2.0 inches).
 # ==============================================================================
 
 rm(list = ls())
@@ -26,43 +26,44 @@ df <- read_table(data_path)
 # 2. Statistical Calculations & Filtering
 # ==============================================================================
 
-get_trimmed_mean <- function(x, trim_prop = 0.2) {
-  x <- x[!is.na(x)]
-  n <- length(x)
-  n_trimm <- floor(n * trim_prop)
-  if (n_trimm > 0) keeper_values <- sort(x)[(n_trimm + 1) : (n - n_trimm)] else keeper_values <- x
-  return(mean(keeper_values))
+calc_trim_params <- function(x, trim = 0.1) {
+  t_mean <- mean(x, trim = trim, na.rm = TRUE)
+  q_limits <- quantile(x, probs = c(trim, 1 - trim), na.rm = TRUE)
+  trim_dat <- x[x >= q_limits[1] & x <= q_limits[2]]
+  t_sd <- sd(trim_dat, na.rm = TRUE)
+  return(list(mean = t_mean, sd = t_sd))
 }
 
-get_trimmed_sd <- function(x, trim_prop = 0.2) {
-  x <- x[!is.na(x)]
-  n <- length(x)
-  n_trimm <- floor(n * trim_prop)
-  if (n_trimm > 0) keeper_values <- sort(x)[(n_trimm + 1) : (n - n_trimm)] else keeper_values <- x
-  return(sd(keeper_values))
+calc_wins_params <- function(x, trim = 0.1) {
+  q_limits <- quantile(x, probs = c(trim, 1 - trim), na.rm = TRUE)
+  wins_dat <- pmax(pmin(x, q_limits[2]), q_limits[1])
+  return(list(mean = mean(wins_dat), sd = sd(wins_dat)))
 }
 
 df_calc <- df %>%
   group_by(conc) %>%
   mutate(
-    mean_val  = mean(signal_out, na.rm = TRUE),
-    sd_val    = sd(signal_out, na.rm = TRUE),
-    z_classic = (signal_out - mean_val) / sd_val,
-    median_val = median(signal_out, na.rm = TRUE),
-    mad_val    = mad(signal_out, na.rm = TRUE),
-    z_robust   = (signal_out - median_val) / mad_val,
-    trimmed_mean_val = get_trimmed_mean(signal_out, 0.2),
-    trimmed_sd_val   = get_trimmed_sd(signal_out, 0.2),
-    z_trimmed        = (signal_out - trimmed_mean_val) / trimmed_sd_val
+    z_mean   = (signal_out - mean(signal_out, na.rm = TRUE)) / sd(signal_out, na.rm = TRUE),
+    z_median = (signal_out - median(signal_out, na.rm = TRUE)) / mad(signal_out, na.rm = TRUE),
+    z_iqr    = (signal_out - median(signal_out, na.rm = TRUE)) / (IQR(signal_out, na.rm = TRUE) / 1.349),
+    
+    trim_stats = list(calc_trim_params(signal_out, trim = 0.1)),
+    z_trim     = (signal_out - trim_stats[[1]]$mean) / trim_stats[[1]]$sd,
+    
+    wins_stats = list(calc_wins_params(signal_out, trim = 0.1)),
+    z_wins     = (signal_out - wins_stats[[1]]$mean) / wins_stats[[1]]$sd
   ) %>% ungroup()
 
 target_conc <- unique(df_calc$conc)[1]
-df_plot_data <- df_calc
+df_plot_data <- df_calc %>% filter(conc == target_conc)
 
-z_classic_config <- list(column = "z_classic", color = "firebrick", file = "02_zscore_classic.pdf")
-z_robust_config  <- list(column = "z_robust",  color = "dodgerblue4", file = "02_zscore_robust.pdf")
-z_trimmed_config <- list(column = "z_trimmed", color = "darkorchid4", file = "02_zscore_trimmed.pdf")
-all_configs <- list(z_classic_config, z_robust_config, z_trimmed_config)
+all_configs <- list(
+  list(column = "z_mean",   color = "firebrick",   file = "02_zscore_mean_sd.pdf"),
+  list(column = "z_median", color = "dodgerblue4", file = "02_zscore_median_mad.pdf"),
+  list(column = "z_iqr",    color = "black",       file = "02_zscore_median_iqr.pdf"),
+  list(column = "z_trim",   color = "darkorchid4", file = "02_zscore_trimmed.pdf"),
+  list(column = "z_wins",   color = "orange",      file = "02_zscore_winsorized.pdf")
+)
 
 # ==============================================================================
 # 3. Visualization Function
@@ -101,7 +102,7 @@ generate_vertical_plot <- function(data, config) {
   p <- ggplot(plot_df, aes(x = X_Dummy, y = Score)) +
     annotate("rect", xmin = -Inf, xmax = Inf, ymin = lower_lim, ymax = upper_lim, fill = main_color, alpha = 0.1) +
     geom_hline(yintercept = 0, color = main_color, linewidth = 1) +
-    geom_point(aes(color = IsOutlier), size = 1, alpha = 0.5, position = position_jitter(width = 0.1, height = 0)) +
+    geom_point(aes(color = IsOutlier), size = 1, alpha = 0.5, position = position_jitter(width = 0.1, height = 0, seed = 42)) +
     
     annotate("text", x = 0.35, y = upper_lim, label = "+3", vjust = -0.5, 
              color = main_color, family = "Arial", size = 2.8, fontface = "bold") +
@@ -120,8 +121,12 @@ generate_vertical_plot <- function(data, config) {
 # 4. Execution
 # ==============================================================================
 
+message("Generating individual Z-score plots...")
+
 for (curr_config in all_configs) {
   p <- generate_vertical_plot(df_plot_data, curr_config)
   save_path <- file.path(output_dir, curr_config$file)
   ggsave(save_path, plot = p, device = cairo_pdf, width = 1.8, height = 2)
 }
+
+message("All Z-score plots generated successfully.")
