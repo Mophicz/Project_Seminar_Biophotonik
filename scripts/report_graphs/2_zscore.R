@@ -54,8 +54,7 @@ df_calc <- df %>%
     z_wins     = (signal_out - wins_stats[[1]]$mean) / wins_stats[[1]]$sd
   ) %>% ungroup()
 
-target_conc <- unique(df_calc$conc)[1]
-df_plot_data <- df_calc %>% filter(conc == target_conc)
+df_plot_data <- df_calc
 
 all_configs <- list(
   list(column = "z_mean",   color = "firebrick",   file = "02_zscore_mean_sd.pdf"),
